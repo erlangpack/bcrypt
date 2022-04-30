@@ -9,6 +9,11 @@ logs/*
 rebar3
 .rebar3
 .rebar
+<<<<<<< Updated upstream
+=======
+doc/*
+!doc/overview.edoc
+>>>>>>> Stashed changes
 
 ## libtool
 .deps

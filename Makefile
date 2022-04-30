@@ -17,6 +17,15 @@ test: $(REBAR)
 dialyzer: $(REBAR)
 	$(REBAR) as test dialyzer
 
+<<<<<<< Updated upstream
+=======
+edoc:
+	$(REBAR) edoc
+	
+edoc_private:
+	$(REBAR) as edoc_private edoc
+
+>>>>>>> Stashed changes
 clean: $(REBAR)
 	$(REBAR) clean
 

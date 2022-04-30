@@ -1,0 +1,24 @@
+@author Hunter Morris <hunter.morris@smarkets.com>
+@title bcrypt
+@doc An Erlang wrapper (NIF or port program) for the OpenBSD password scheme, bcrypt. erlang-bcrypt is a wrapper around the OpenBSD Blowfish password hashing algorithm.
+Bcrypt uses a 128-bit salt and encrypts a 192-bit magic value.
+
+== The bcrypt algorithm for hashing UNIX passwords, based on eksblowfish ==
+
+```
+bcrypt (cost, salt, pwd )
+	state <- EksBlowfishSetup (cost, salt, key)
+	ctext <- "OrpheanBeholderScryDoubt"
+	repeat(64)
+		ctext <- EncryptECB(state, ctext )
+	return Concatenate (cost, salt, ctext )
+'''
+
+A salt is random data that is used as an additional input to a one-way function that hashes data, a password or passphrase. 
+Salts are used to safeguard passwords in storage. 
+
+A cost is the cost factor. The cost factor controls how much time is needed to calculate a single bcrypt hash.
+A bcrypt cost of 6 means 64 rounds (2<sup>6</sup> = 64).
+
+@copyright MIT License 2011 by Hunter Morris, Mrinal Wadhwa
+@reference See <a href="http://www.openbsd.org/papers/bcrypt-paper.ps">"A Future-Adaptable Password Scheme" by Niels Provos and David Mazieres</a> for more information.
