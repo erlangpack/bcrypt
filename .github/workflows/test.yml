@@ -18,18 +18,22 @@ jobs:
 
     strategy:
       matrix:
-        otp_version: [21.3, 22.3, 23, 24]
+        otp_version: [27,28,29]
         os: [ubuntu-latest]
 
     container:
       image: erlang:${{ matrix.otp_version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Compile
         run: make
       - name: Test
         run: make test
+      - name: Native security tests
+        run: make security-test
+      - name: Single-scheduler security tests
+        run: ERL_FLAGS="+S 1" rebar3 as test eunit --module=bcrypt_security_tests
       - name: XRef
         run: make xref
       - name: Dialyzer

@@ -89,30 +89,8 @@ terminate(shutdown, _) -> ok.
 
 %% @private
 
--spec handle_call(Request, From, State) -> Result when 
-    Request :: gen_salt,
-    From :: {pid(), atom()},
-    State :: state(),
-	Result :: {reply, Reply, State},
-	Reply :: {ok, Salt},
-	Salt :: integer();
-(Request, From, State) -> Result when
-	Request :: {gen_salt, Rounds},
-	From :: {pid(), atom()},
-	State :: state(),
-	Rounds :: bcrypt:rounds(),
-	Result :: {reply, Reply, State},
-	Reply :: {ok, Salt},
-	Salt :: integer();
-(Request, From, State) -> Result when
-	Request :: {hashpw, Password, Salt},
-	From :: {pid(), atom()},
-	State :: state(),
-	Password :: [byte()],
-	Salt :: integer(),
-	Result :: {reply, Reply, State} | {reply, Reply, State},
-	Reply :: {ok, ResultInfo} | {error, ResultInfo},
-	ResultInfo :: term().
+-spec handle_call(term(), gen_server:from(), state()) ->
+    {reply, term(), state()}.
 
 handle_call(gen_salt, _From, #state{default_log_rounds = R} = State) ->
     Salt = bcrypt_nif:gen_salt(R),
@@ -122,7 +100,7 @@ handle_call({gen_salt, R}, _From, State) ->
     {reply, {ok, Salt}, State};
 handle_call({hashpw, Password, Salt}, _From, #state{context=Ctx}=State) ->
     Ref = make_ref(),
-    ok = bcrypt_nif:hashpw(Ctx, Ref, self(), to_list(Password), to_list(Salt)),
+    ok = bcrypt_nif:hashpw(Ctx, Ref, self(), Password, Salt),
     receive
         {ok, Ref, Result} ->
             {reply, {ok, Result}, State};
@@ -142,12 +120,3 @@ handle_info(Msg, _) -> exit({unknown_info, Msg}).
 %% @private
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
--spec to_list(List) -> Result when
-	List :: [byte()],
-	Result :: [byte()];
-(Binary) -> Result when
-	Binary :: binary(),
-	Result :: [byte()].	
-to_list(L) when is_list(L) -> L;
-to_list(B) when is_binary(B) -> binary_to_list(B).

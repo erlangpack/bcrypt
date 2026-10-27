@@ -38,3 +38,8 @@ edoc_private: $(REBAR)
 
 exdoc: $(REBAR)	
 	$(REBAR) ex_doc --logo doc/img/logo.png --output edoc
+
+# Isolated native boundary checks with address/undefined-behavior sanitizers.
+.PHONY: security-test
+security-test:
+	$(MAKE) -C c_src security-test

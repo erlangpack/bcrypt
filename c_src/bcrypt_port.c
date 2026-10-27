@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "erl_blf.h"
+#include "bcrypt.h"
 #include "ei.h"
 
 #define dec_int16(s) ((((unsigned char*)(s))[0] << 8) | \
@@ -29,11 +30,7 @@
 #define CMD_SALT 0
 #define CMD_HASHPW 1
 
-#define DATASIZE 1024
-
-extern int ts_bcrypt(char *, const char *, const char *);
-extern void encode_salt(char *, u_int8_t *, u_int16_t, u_int8_t);
-
+#define DATASIZE BCRYPT_MAXPASSWORD
 
 static void
 fail(int place) {
@@ -166,14 +163,25 @@ process_hashpw(
     int salt_size,
     char *salt)
 {
-    char encrypted[DATASIZE+1];
-
-    memset(encrypted, 0, DATASIZE+1);
-    if (ts_bcrypt(encrypted, password, salt)) {
-        process_error_reply(CMD_HASHPW, "invalid_salt");
-    } else {
-        process_reply(CMD_HASHPW, encrypted);
+    char encrypted[BCRYPT_HASHSIZE];
+    int result = bcrypt_hash(encrypted, sizeof(encrypted),
+        (unsigned char *)password, password_size,
+        (unsigned char *)salt, salt_size);
+    switch (result) {
+        case BCRYPT_OK:
+            process_reply(CMD_HASHPW, encrypted);
+            break;
+        case BCRYPT_INVALID_PASSWORD:
+            process_error_reply(CMD_HASHPW, "invalid_password");
+            break;
+        case BCRYPT_INVALID_PASSWORD_LENGTH:
+            process_error_reply(CMD_HASHPW, "invalid_password_length");
+            break;
+        default:
+            process_error_reply(CMD_HASHPW, "invalid_salt");
     }
+    bcrypt_clear(encrypted, sizeof(encrypted));
+    bcrypt_clear(password, password_size);
 }
 
 static void
@@ -216,8 +224,11 @@ process_command(char *buf)
         fail(8);
     if (type != ERL_BINARY_EXT)
         fail(9);
-    if (data_size < 0 || data_size > DATASIZE)
-        fail(10);
+    if (data_size < 0 || data_size > DATASIZE) {
+        process_error_reply(cmd, cmd == CMD_HASHPW ?
+            "invalid_password_length" : "invalid_salt_length");
+        return;
+    }
     if (ei_decode_binary(buf, &index, data, &len) != 0)
         fail(11);
 
@@ -228,8 +239,11 @@ process_command(char *buf)
                 fail(12);
             if (type != ERL_BINARY_EXT)
                 fail(13);
-            if (salt_size < 0 || salt_size > DATASIZE)
-                fail(14);
+            if (salt_size < 0 || salt_size > DATASIZE) {
+                process_error_reply(cmd, "invalid_salt");
+                bcrypt_clear(data, sizeof(data));
+                return;
+            }
             if (ei_decode_binary(buf, &index, salt, &len) != 0)
                 fail(15);
 
@@ -254,6 +268,7 @@ loop(void)
 
     while (read_cmd(buf) == 1) {
         process_command(buf);
+        bcrypt_clear(buf, sizeof(buf));
     }
 }
 

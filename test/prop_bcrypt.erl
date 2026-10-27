@@ -104,5 +104,6 @@ check_simple() ->
 %%% Generators %%%
 %%%%%%%%%%%%%%%%%%
 
-password() -> oneof([non_empty(binary()), non_empty(ascii_string())]).
-ascii_string() -> list(range(0,255)).
+%% $2b$ rejects embedded NUL bytes; explicit rejection is covered by EUnit.
+password() -> oneof([?LET(Bytes, ascii_string(), list_to_binary(Bytes)), ascii_string()]).
+ascii_string() -> list(range(1,255)).

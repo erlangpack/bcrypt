@@ -23,7 +23,7 @@
           ports = queue:new()
          }).
 
--record(req, {mon :: reference(), from :: {pid(), atom()}}).
+-record(req, {mon :: reference(), from :: gen_server:from()}).
 
 -type state() :: #state{size :: 0, busy :: 0, requests :: queue:queue(), ports :: queue:queue()}.
 
@@ -85,8 +85,7 @@ terminate(shutdown, _) -> ok.
 
 -spec handle_call(Request, From, State) -> Result when 
 	Request :: request,
-    From :: {RPid, atom()},
-	RPid :: pid(),
+    From :: gen_server:from(),
 	State :: state(),
 	Result :: {noreply, state()} | {reply, {ok, pid()}, state()}.
 handle_call(request, {RPid, _} = From, #state{ports = P} = State) ->
