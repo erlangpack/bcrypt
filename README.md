@@ -192,12 +192,39 @@ following OpenBSD bcrypt. Passwords up to 1,024 bytes are accepted; longer
 inputs return `{error, invalid_password_length}`. Malformed salts return
 `{error, invalid_salt}`. These rules apply to both the NIF and port backends.
 
-`$2b$` rejects embedded NUL bytes with `{error, invalid_password}`. Pass text
+`$2b$` and `$2y$` reject embedded NUL bytes with `{error, invalid_password}`. Pass text
 passwords as encoded bytes; do not pass raw binary prehashes containing NULs.
 Existing `$2a$` hashes retain historical password-length wraparound and NUL
 termination semantics for verification. After a successful legacy verification,
 generate a fresh salt and rehash with `$2b$`; do not just change the prefix.
 Legacy hashes affected by those behaviors may warrant a password reset.
+
+PHP `$2y$` hashes are supported by both backends with the same hashing
+semantics as `$2b$`. Pass the stored hash directly to `bcrypt:hashpw/2`;
+the returned hash retains `$2y$`, so the usual verification pattern works
+without rewriting stored prefixes:
+
+```erlang
+%% StoredHash is the PHP hash as a byte list; Password contains the same
+%% encoded bytes used in PHP (for example, a UTF-8 binary).
+{ok, StoredHash} =:= bcrypt:hashpw(Password, StoredHash).
+```
+
+`gen_salt/0` and `gen_salt/1` generate `$2b$` salts. To generate a PHP
+`$2y$` hash directly, select the version with `gen_salt(Rounds, Version)`:
+
+```erlang
+{ok, Salt} = bcrypt:gen_salt(12, '2y'),
+{ok, PhpHash} = bcrypt:hashpw(<<"password">>, Salt).
+```
+
+The version must be the atom `'2b'` or `'2y'`, and the cost must be an integer
+from 4 to 31. Invalid options raise `function_clause`, as with `gen_salt/1`.
+The option works with both backends. `PhpHash` retains `$2y$` and can be
+verified using PHP's `password_verify()`.
+
+The same 1,024-byte input limit and NUL-byte rejection apply to `$2y$`;
+`$2x$` remains unsupported.
 
 The NIF uses OTP dirty CPU schedulers. Its asynchronous `hashpw/5` interface
 uses an Erlang helper process and an opaque reference from `create_ctx/0`;

@@ -8,6 +8,7 @@ int main(void)
     unsigned char password[1025];
     unsigned char salt[1024];
     const unsigned char valid[] = "$2b$04$......................";
+    const unsigned char php_salt[] = "$2y$04$......................";
     char output[BCRYPT_HASHSIZE];
     memset(password, 'A', sizeof(password));
     memset(salt, '.', sizeof(salt));
@@ -31,9 +32,14 @@ int main(void)
         assert(bcrypt_hash(output, sizeof(output), password, 72,
             salt, 29) == BCRYPT_INVALID_SALT);
     }
+    assert(bcrypt_hash(output, sizeof(output), password, 1024,
+        php_salt, 29) == BCRYPT_OK);
+    assert(strlen(output) == 60 && strncmp(output, "$2y$", 4) == 0);
     password[0] = 0;
     assert(bcrypt_hash(output, sizeof(output), password, 72,
         valid, 29) == BCRYPT_INVALID_PASSWORD);
+    assert(bcrypt_hash(output, sizeof(output), password, 72,
+        php_salt, 29) == BCRYPT_INVALID_PASSWORD);
     bcrypt_clear(password, sizeof(password));
     for (size_t i = 0; i < sizeof(password); i++)
         assert(password[i] == 0);

@@ -78,6 +78,7 @@ bcrypt_hashpass(const char *key, const char *salt, char *encrypted,
 		key_len = (u_int8_t)(strlen(key) + 1);
 		break;
 	case 'b':
+	case 'y': /* PHP/crypt_blowfish: identical to $2b$. */
 		/* strlen() returns a size_t, but the function calls
 		 * below result in implicit casts to a narrower integer
 		 * type, so cap key_len at the actual maximum supported
@@ -271,7 +272,7 @@ int bcrypt_hash(char *out, size_t outlen, const unsigned char *password,
         memchr(salt, 0, salt_len) != NULL)
         return BCRYPT_INVALID_SALT;
     /* Preserve historical C-string behavior only for legacy verification. */
-    if (salt[2] == 'b' && password_len &&
+    if ((salt[2] == 'b' || salt[2] == 'y') && password_len &&
         memchr(password, 0, password_len) != NULL)
         return BCRYPT_INVALID_PASSWORD;
     if (password_len)

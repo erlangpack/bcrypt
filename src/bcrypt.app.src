@@ -22,7 +22,7 @@
     {exclude_files, [
         "priv/bcrypt"
     ]},
-    {maintainers, ["Hunter Morris", "Mrinal Wadhwa", "ErlangPack"]},
+    {maintainers, ["ErlangPack"]},
     {licenses, ["MIT"]},
     {links, [{"Github", "https://github.com/erlangpack/bcrypt"}]}
 ]}.
