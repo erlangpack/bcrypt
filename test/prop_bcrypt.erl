@@ -9,7 +9,7 @@
 
 
 prop_mechanism_nif() ->
-    ?SETUP(setup(nif),
+    with_setup(nif,
     ?FORALL(_Ok, exactly(ok),
     begin
         Mechanism = bcrypt:mechanism(),
@@ -18,7 +18,7 @@ prop_mechanism_nif() ->
     ).
 
 prop_mechanism_port() ->
-    ?SETUP(setup(port),
+    with_setup(port,
     ?FORALL(_Ok, exactly(ok),
     begin
         Mechanism = bcrypt:mechanism(),
@@ -27,34 +27,40 @@ prop_mechanism_port() ->
     ).
 
 prop_salt_rounds_nif() ->
-    ?SETUP(setup(nif),
+    with_setup(nif,
     check_salt_rounds()        
     ).
 
 prop_salt_rounds_port() ->
-    ?SETUP(setup(port),
+    with_setup(port,
     check_salt_rounds()        
     ).
 
 
 prop_salt_port() ->
-    ?SETUP(setup(port),
+    with_setup(port,
     check_salt()        
     ).
 
 prop_simple_nif() ->
-    ?SETUP(setup(nif),
+    with_setup(nif,
     check_simple()        
     ).
 
 prop_simple_port() ->
-    ?SETUP(setup(port),
+    with_setup(port,
     check_simple()        
     ).
 
 %%%%%%%%%%%%%%%%%%
 %%%  Helpers   %%%
 %%%%%%%%%%%%%%%%%%
+
+%% PropEr distinguishes test/0 from outer_test/0 as opaque types.
+%% Use its public conversion before passing a property to the setup wrapper.
+-spec with_setup(bcrypt:mechanism(), proper:test()) -> proper:outer_test().
+with_setup(Mechanism, Property) ->
+    proper:setup(setup(Mechanism), proper:test_to_outer_test(Property)).
 
 setup(Mechanism) ->
     fun() ->
