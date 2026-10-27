@@ -1,4 +1,5 @@
 %% Copyright (c) 2011 Hunter Morris
+%% Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
 %% Distributed under the MIT license; see LICENSE for details.
 %% @doc The OpenBSD Blowfish password hashing algorithm wrapper module.
 -module(bcrypt).

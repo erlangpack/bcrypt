@@ -1,6 +1,7 @@
 /*	$OpenBSD: bcrypt.c,v 1.58 2020/07/06 13:33:05 pirofti Exp $	*/
 
 /*
+ * Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
  * Copyright (c) 2014 Ted Unangst <tedu@openbsd.org>
  * Copyright (c) 1997 Niels Provos <provos@umich.edu>
  *

@@ -1,4 +1,4 @@
-%% @copyright 2011 Hunter Morris
+%% @copyright 2011 Hunter Morris, 2026 Marc Worrell
 %% @doc Implementation of `gen_server' behaviour.
 %% @end
 %% Distributed under the MIT license; see LICENSE for details.

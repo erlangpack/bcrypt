@@ -1,6 +1,7 @@
-The Erlang code is subject to this license:
+The Erlang code, native wrappers, and tests are subject to this license:
 
 %% Copyright (c) 2011 Hunter Morris <hunter.morris@smarkets.com>
+%% Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
 
 %% Permission to use, copy, modify, and distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -54,6 +55,7 @@ The underlying bcrypt (hashing) code is derived from OpenBSD libc and is
 subject to the following license:
 
 /*
+ * Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
  * Copyright (c) 2014 Ted Unangst <tedu@openbsd.org>
  * Copyright (c) 1997 Niels Provos <provos@umich.edu>
  *

@@ -31,7 +31,7 @@ erlang-bcrypt is on Hex:
 
   ```erlang
   {deps, [
-      {bcrypt, "1.1.3"}
+      {bcrypt, "~> 2.0"}
   ]}.
   ```
 
@@ -53,20 +53,21 @@ Basic build instructions
     make
     ```
 
-2. Run it (simple way, starting sasl, crypto and bcrypt):
+2. Run it (simple way, starting sasl, crypto, poolboy and bcrypt):
 
     ```shell
     $ ./rebar3 shell
     ===> Verifying dependencies...
     ===> Compiling bcrypt
     make: Nothing to be done for `all'.
-    Erlang/OTP 23 [erts-11.0] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [hipe]
+    Erlang/OTP 28 [erts-16.4] [source] [64-bit] [smp:10:10] [ds:10:10:10] [async-threads:1] [jit]
 
-    Eshell V11.0  (abort with ^G)
+    Eshell V16.4 (press Ctrl+G to abort, type help(). for help)
     1> application:ensure_all_started(bcrypt).
-    {ok,[bcrypt]}
+    {ok,[poolboy,bcrypt]
     2>     
     ```
+
 
 Basic usage instructions
 ------------------------
@@ -75,9 +76,9 @@ Hash a password using a salt with the default number of rounds:
 
 ```erlang
 1> {ok, Salt} = bcrypt:gen_salt().
-{ok,"$2b$12$sSS8Eg.ovVzaHzi1nUHYK."}
+{ok,"$2b$12$JrJ8HaRoDZaCALBL08XAie"}
 2> {ok, Hash} = bcrypt:hashpw("foo", Salt).
-{ok,"$2b$12$sSS8Eg.ovVzaHzi1nUHYK.HbUIOdlQI0iS22Q5rd5z.JVVYH6sfm6"}
+{ok,"$2b$12$JrJ8HaRoDZaCALBL08XAie1PQi.8QII9K0f05qhVSaHGOW56jnYW2"}
 ```
 
 Verify the password:
@@ -88,6 +89,17 @@ true
 4> {ok, Hash} =:= bcrypt:hashpw("bar", Hash).
 false
 ```
+
+Generate a PHP-compatible `$2y$` hash using `gen_salt/2`:
+
+```erlang
+{ok, PhpSalt} = bcrypt:gen_salt(12, '2y'),
+{ok, PhpHash} = bcrypt:hashpw(<<"password">>, PhpSalt).
+```
+
+Store `PhpHash` as the password hash; PHP can verify it with
+`password_verify()`.
+
 
 Configuration
 -------------
@@ -100,92 +112,25 @@ application's environment:
   hash function. Defaults to `12`.
 
 `mechanism`
-  Specifies whether to use the NIF implementation (`'nif'`) or a
-  pool of port programs (`'port'`). Defaults to `'nif'`.
-
-  `Note: hashing runs on OTP dirty CPU schedulers, not normal scheduler threads.`
+  Selects `nif` (the default) or `port`. The NIF hashes inside the Erlang VM
+  on OTP dirty CPU schedulers. The port backend hashes in a pool of external
+  OS processes. Set this option before starting bcrypt; restart the bcrypt
+  application after changing it.
 
 `pool_size`
-  Specifies the size of the port program pool. Defaults to `4`.
+  Sets the maximum number of port workers when using `port`. Defaults to `4`.
 
 `nif_pool_size`
-  Specifies the size of the nif program pool. Defaults to `4`.
+  Sets the number of Erlang workers in the NIF pool when using `nif`.
+  Defaults to `4`. This does not set the number of OTP dirty CPU schedulers.
 
 `nif_pool_max_overflow`
-  Specifies the max workers to overflow of the nif program pool. Defaults to `10`.
-
-Run tests
----------
-
-To run the eunit and proper tests use:
-
-```shell
-make tests
-```
-
-To test all exported function of a module use:
-
-```shell
-$ ./rebar3 as test shell
-===> Verifying dependencies...
-===> Compiling bcrypt
-make: Nothing to be done for all.
-Erlang/OTP 23 [erts-11.0] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [hipe]
-
-Eshell V11.0  (abort with ^G)
-1> application:ensure_all_started(bcrypt).
-{ok,[bcrypt]}
-2>proper:check_specs(bcrypt).            
-Testing bcrypt:gen_salt/0
-....................................................................................................
-OK: Passed 100 test(s).
-    
-Testing bcrypt:hashpw/2
-....................................................................................................
-OK: Passed 100 test(s).
-    
-Testing bcrypt:gen_salt/1
-....................................................................................................
-OK: Passed 100 test(s).
-    
-Testing bcrypt:mechanism/0
-....................................................................................................
-OK: Passed 100 test(s).
-    
-[]
-4> 
-```
-
-## Documentation generation
-
-### Edoc
-
-#### Generate public API
-```
-rebar3 edoc
-```
-
-#### Generate private API
-```
-rebar3 as edoc_private edoc
-```
-
-### ExDoc
-
-```
-rebar3 ex_doc --output edoc
-```
+  Sets the maximum number of additional temporary NIF pool workers when
+  the regular workers are busy. Defaults to `10`.
 
 
-Both the _port_ and the _NIF_ version of bcrypt are tested.
-All tests should pass.
-
-Original authors
-----------------
-
-Hunter Morris & [Mrinal Wadhwa](https://github.com/mrinalwadhwa).
-
-## Password compatibility and native safety
+Password compatibility and native safety
+----------------------------------------
 
 New salts use `$2b$`. Hashing uses at most the first 72 password bytes,
 following OpenBSD bcrypt. Passwords up to 1,024 bytes are accepted; longer
@@ -243,3 +188,78 @@ Run `make security-test` for native boundary checks under ASan/UBSan. Run
 `rebar3 as test eunit` for compatibility, malformed-input, and lifecycle tests.
 The lifecycle regression can also be run with `ERL_FLAGS="+S 1"` to verify
 that owner exit does not block the sole normal scheduler.
+
+
+Run tests
+---------
+
+To run the eunit and proper tests use:
+
+```shell
+make test
+```
+
+To test all exported function of a module use:
+
+```shell
+$ ./rebar3 as test shell
+===> Verifying dependencies...
+===> Analyzing applications...
+===> Compiling bcrypt
+make: Nothing to be done for all.
+Erlang/OTP 28 [erts-16.4] [source] [64-bit] [smp:10:10] [ds:10:10:10] [async-threads:1] [jit]
+
+Eshell V16.4 (press Ctrl+G to abort, type help(). for help)
+1> application:ensure_all_started(bcrypt).
+{ok,[poolboy,bcrypt]}
+2> proper:check_specs(bcrypt).            
+Testing bcrypt:gen_salt/0
+....................................................................................................
+OK: Passed 100 test(s).
+
+Testing bcrypt:is_worker_available/0
+....................................................................................................
+OK: Passed 100 test(s).
+
+Testing bcrypt:gen_salt/2
+....................................................................................................
+OK: Passed 100 test(s).
+
+Testing bcrypt:hashpw/2
+....................................................................................................
+OK: Passed 100 test(s).
+
+Testing bcrypt:gen_salt/1
+....................................................................................................
+OK: Passed 100 test(s).
+
+Testing bcrypt:mechanism/0
+....................................................................................................
+OK: Passed 100 test(s).
+
+[]
+4> 
+```
+
+## Documentation generation
+
+### Edoc for public API
+```
+rebar3 edoc
+```
+
+### Edoc for private API
+```
+rebar3 as edoc_private edoc
+```
+
+### ExDoc
+
+```
+rebar3 ex_doc --output edoc
+```
+
+Original authors
+----------------
+
+Hunter Morris & [Mrinal Wadhwa](https://github.com/mrinalwadhwa).

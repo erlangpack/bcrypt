@@ -1,5 +1,5 @@
 %% @author Hunter Morris <hunter.morris@smarkets.com>
-%% @copyright 2011 Hunter Morris
+%% @copyright 2011 Hunter Morris, 2026 Marc Worrell
 %%
 %% @doc Bcrypt Erlang wrapper. <div>The wrapper around the OpenBSD Blowfish password hashing algorithm, as
 %% described in: [http://www.openbsd.org/papers/bcrypt-paper.ps "A Future-Adaptable Password Scheme"]
