@@ -7,14 +7,15 @@
 %% API
 -export([start/0, stop/0]).
 -export([mechanism/0]).
--export([gen_salt/0, gen_salt/1, hashpw/2, is_worker_available/0]).
+-export([gen_salt/0, gen_salt/1, gen_salt/2, hashpw/2, is_worker_available/0]).
 
 -type mechanism() :: nif | port.
 -type rounds() :: 4..31.
+-type version() :: '2b' | '2y'.
 -type pwerr() :: invalid_salt | invalid_salt_length | invalid_rounds
     | invalid_password | invalid_password_length.
 
--export_type([ mechanism/0, rounds/0, pwerr/0 ]).
+-export_type([ mechanism/0, rounds/0, version/0, pwerr/0 ]).
 
 %% @doc Starts `Application' `bcrypt'. 
 %% <b>See also:</b> 
@@ -51,6 +52,17 @@ gen_salt() ->
 	Salt :: [byte()].
 gen_salt(Rounds) when is_integer(Rounds), Rounds < 32, Rounds > 3 ->
     do_gen_salt(mechanism(), Rounds).
+
+%% @doc Generate a random salt with an explicit version. Use '2y' for PHP;
+%% gen_salt/0 and gen_salt/1 default to '2b'.
+-spec gen_salt(rounds(), version()) -> {ok, [byte()]}.
+gen_salt(Rounds, '2b') ->
+    gen_salt(Rounds);
+gen_salt(Rounds, '2y') ->
+    %% Both versions have identical salt encoding. Reuse the backend's secure
+    %% random generation and select the prefix before any password is hashed.
+    {ok, "$2b$" ++ Salt} = gen_salt(Rounds),
+    {ok, "$2y$" ++ Salt}.
 
 %% @doc Make hash string based on `Password' and `Salt'.
 
