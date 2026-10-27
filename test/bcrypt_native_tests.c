@@ -1,3 +1,7 @@
+/* Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
+ * See LICENSE for license terms.
+ */
+
 /* Run under ASan/UBSan with `make security-test`. */
 #include <assert.h>
 #include <string.h>

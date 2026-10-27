@@ -1,3 +1,6 @@
+%% Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
+%% See LICENSE for license terms.
+
 -module(bcrypt_security_tests).
 -include_lib("eunit/include/eunit.hrl").
 

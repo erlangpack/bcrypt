@@ -1,3 +1,7 @@
+/* Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
+ * See LICENSE for license terms.
+ */
+
 #ifndef ERLANG_BCRYPT_H
 #define ERLANG_BCRYPT_H
 

@@ -1,3 +1,6 @@
+%% Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
+%% See LICENSE for license terms.
+
 -module(prop_bcrypt).
 
 -include_lib("proper/include/proper.hrl").

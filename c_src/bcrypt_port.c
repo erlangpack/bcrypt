@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 Marc Worrell <marc@worrell.nl>
  * Copyright (c) 2011 Hunter Morris <hunter.morris@smarkets.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
