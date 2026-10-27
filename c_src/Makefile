@@ -65,13 +65,15 @@ COMPILE_CPP = $(cpp_verbose) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 
 all: $(C_SRC_NIF) $(C_SRC_PORT)
 
-$(C_SRC_PORT): $(OBJECTS)
+$(C_SRC_PORT): bcrypt_port.o bcrypt.o blowfish.o
 	@mkdir -p $(BASEDIR)/priv/
 	$(CC) $(CFLAGS) bcrypt_port.o bcrypt.o blowfish.o $(DRV_LDFLAGS) $(LDLIBS) -o ../priv/bcrypt
 
-$(C_SRC_NIF): $(OBJECTS)
+$(C_SRC_NIF): bcrypt_nif.o bcrypt.o blowfish.o
 	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) -shared $(LDLIBS) -o $(C_SRC_NIF)
+	$(link_verbose) $(CC) bcrypt_nif.o bcrypt.o blowfish.o $(LDFLAGS) -shared $(LDLIBS) -o $(C_SRC_NIF)
+
+$(OBJECTS): bcrypt.h erl_blf.h
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
@@ -86,4 +88,11 @@ $(C_SRC_NIF): $(OBJECTS)
 	$(COMPILE_CPP) $(OUTPUT_OPTION) $<
 
 clean:
-	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
+	@rm -f $(C_SRC_NIF) $(C_SRC_PORT) $(OBJECTS)
+
+.PHONY: security-test
+security-test:
+	@tmpdir=$$(mktemp -d) || exit 1; trap 'rm -rf "$$tmpdir"' EXIT; \
+	$(CC) -std=c99 -D_DEFAULT_SOURCE -g -O1 -fsanitize=address,undefined \
+	    -fno-omit-frame-pointer -fno-sanitize-recover=all -I. ../test/bcrypt_native_tests.c bcrypt.c blowfish.c \
+	    -o "$$tmpdir/bcrypt_native_tests" && "$$tmpdir/bcrypt_native_tests"

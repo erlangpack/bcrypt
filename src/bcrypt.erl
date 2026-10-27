@@ -11,7 +11,8 @@
 
 -type mechanism() :: nif | port.
 -type rounds() :: 4..31.
--type pwerr() :: invalid_salt | invalid_salt_length | invalid_rounds.
+-type pwerr() :: invalid_salt | invalid_salt_length | invalid_rounds
+    | invalid_password | invalid_password_length.
 
 -export_type([ mechanism/0, rounds/0, pwerr/0 ]).
 
@@ -60,7 +61,11 @@ gen_salt(Rounds) when is_integer(Rounds), Rounds < 32, Rounds > 3 ->
 	Hash :: [byte()],
 	ErrorDescription :: pwerr().
 hashpw(Password, Salt) ->
-    do_hashpw(mechanism(), Password, Salt).
+    case {iolist_size(Password), iolist_size(Salt)} of
+        {N, _} when N > 1024 -> {error, invalid_password_length};
+        {_, N} when N =/= 29, N =/= 60 -> {error, invalid_salt};
+        _ -> do_hashpw(mechanism(), Password, Salt)
+    end.
 
 %% @doc Is at least one bcrypt worker currently available for work?
 

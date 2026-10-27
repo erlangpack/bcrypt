@@ -125,13 +125,15 @@ is_worker_available_nif_test_() ->
      [{timeout, 5000,
        fun() ->
             ?assert(bcrypt:is_worker_available()),
-            spawn_long_hash(),
-            {ok, Salt} = bcrypt:gen_salt(),
-            bcrypt:hashpw("foo", Salt),
-            ?assert(bcrypt:is_worker_available()),
-            spawn_long_hash(),
-            bcrypt:hashpw("foo", Salt),
-            ?assertNot(bcrypt:is_worker_available())
+            First = poolboy:checkout(bcrypt_nif_pool),
+            Second = poolboy:checkout(bcrypt_nif_pool),
+            try
+                ?assertNot(bcrypt:is_worker_available())
+            after
+                poolboy:checkin(bcrypt_nif_pool, Second),
+                poolboy:checkin(bcrypt_nif_pool, First)
+            end,
+            ?assert(bcrypt:is_worker_available())
        end}]}.
 
 simple_port_test_() ->
@@ -158,11 +160,11 @@ is_worker_available_port_test_() ->
      [{timeout, 5000,
        fun() ->
             ?assert(bcrypt:is_worker_available()),
-            spawn_long_hash(),
-            spawn_long_hash(),
-            ?assertNot(bcrypt:is_worker_available())
+            {ok, Worker} = gen_server:call(bcrypt_pool, request),
+            try
+                ?assertNot(bcrypt:is_worker_available())
+            after
+                bcrypt_pool:available(Worker)
+            end,
+            ?assert(bcrypt:is_worker_available())
        end}]}.
-
-spawn_long_hash() ->
-    {ok, Salt} = bcrypt:gen_salt(15),
-    spawn(bcrypt, hashpw, ["foo", Salt]).

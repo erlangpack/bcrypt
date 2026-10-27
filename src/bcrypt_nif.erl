@@ -70,14 +70,14 @@ encode_salt(_R, _LogRounds) ->
     nif_stub_error(?LINE).
 
 %%--------------------------------------------------------------------
-%% @doc Create a context which hashes passwords in a separate thread.
+%% @doc Create an opaque token for the asynchronous hashing interface.
 %% @end
 %%--------------------------------------------------------------------
 
 -spec create_ctx() -> Context when
 	Context :: term().
 create_ctx() ->
-    nif_stub_error(?LINE).
+    make_ref().
 
 %%--------------------------------------------------------------------
 %% @doc Hash the specified password and the salt using the OpenBSD
@@ -89,10 +89,29 @@ create_ctx() ->
 	Ctx :: term(), 
 	Ref :: reference(), 
 	Pid :: pid(), 
-	Password :: [byte()], 
-	Salt :: [byte()],
+	Password :: iodata(),
+	Salt :: iodata(),
 	Result :: ok.
-hashpw(_Ctx, _Ref, _Pid, _Password, _Salt) ->
+hashpw(Ctx, Ref, Pid, Password, Salt)
+  when is_reference(Ctx), is_reference(Ref), is_pid(Pid), node(Pid) =:= node() ->
+    %% Bound inputs before converting iolists or copying them into a helper.
+    case {iolist_size(Password), iolist_size(Salt)} of
+        {N, _} when N > 1024 ->
+            Pid ! {error, Ref, invalid_password_length};
+        {_, N} when N =/= 29, N =/= 60 ->
+            Pid ! {error, Ref, invalid_salt};
+        _ ->
+            Pass = iolist_to_binary(Password),
+            Setting = iolist_to_binary(Salt),
+            spawn(fun() ->
+                {Status, Result} = hashpw_dirty(Pass, Setting),
+                Pid ! {Status, Ref, Result}
+            end)
+    end,
+    ok.
+
+%% This NIF runs exclusively on OTP dirty CPU schedulers.
+hashpw_dirty(_Password, _Salt) ->
     nif_stub_error(?LINE).
 
 nif_stub_error(Line) ->
